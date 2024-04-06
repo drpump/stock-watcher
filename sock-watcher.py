@@ -3,12 +3,14 @@ import os
 import json
 import logging
 import time
-from kafka import KafkaProducer
+import kpub
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
-bootstrap = env_or_default('KAFKA_BOOTSTRAP', 'dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092')
-producer = KafkaProducer(bootstrap_servers=bootstrap)
+SYM_KEY="S"
+TYPE_KEY="T"
+
+watch_symbols = None
 
 def env_or_default(env_var, value):
     return value if not env_var in os.environ else os.environ[env_var]
@@ -24,7 +26,7 @@ def publish_quote(quote):
 def on_message(ws, message):
     msg = json.loads(message)
     for obj in msg:
-        match obj["T"]:
+        match obj[TYPE_KEY]:
             case "subscription":
                 logging.info("Subscription confirmed: " + json.dumps(obj))
             case "success":
@@ -32,11 +34,12 @@ def on_message(ws, message):
             case "error":
                 logging.error("Error: " + json.dumps(obj))
             case "q":
-                logging.info("New quote: " + json.dumps(obj))
+                kpub.send_quote(obj[SYM_KEY], obj)
             case "t":
                 logging.info("New trade: " + json.dumps(obj))
             case _:
                 logging.info("Other message: " + json.dumps(obj))
+    kpub.flush()
 
 def on_error(ws, error):
     logging.error(f"Error on websocket -- {error}")
@@ -45,22 +48,27 @@ def on_close(ws, close_status_code, close_msg):
     logging.warn(f"Websocket closed with status {close_status_code} -- {close_msg}" )
 
 def on_open(ws):
-    symbols = env_or_default('STOCK_SYMBOLS', 'RMD,AAPL').split(',')
-    subs = json.dumps({
+    ws.send(subs_request(watch_symbols))
+    logging.info("Websocket opened")
+
+def subs_request(symbols):
+    return json.dumps({
             "action": "subscribe",
             "quotes": symbols
-        })
-    logging.info("Subscription requested:" + subs)
-    ws.send(subs)
+    })
 
-# websocket.enableTrace(True)
-ws = websocket.WebSocketApp("wss://stream.data.alpaca.markets/v2/iex",
-                            header={
-                                'APCA-API-KEY-ID': os.environ['ALPACA_KEY'], 
-                                'APCA-API-SECRET-KEY': os.environ['ALPACA_SECRET'] 
-                            },
-                            on_open=on_open,
-                            on_message=on_message,
-                            on_error=on_error,
-                            on_close=on_close)
-ws.run_forever()
+def run_forever(symbols):
+    global watch_symbols
+    watch_symbols = symbols
+    ws = websocket.WebSocketApp("wss://stream.data.alpaca.markets/v2/iex",
+                                header={
+                                    'APCA-API-KEY-ID': os.environ['ALPACA_KEY'], 
+                                    'APCA-API-SECRET-KEY': os.environ['ALPACA_SECRET'] 
+                                },
+                                on_open=on_open,
+                                on_message=on_message,
+                                on_error=on_error,
+                                on_close=on_close)
+    ws.run_forever()
+
+run_forever(env_or_default('STOCK_SYMBOLS', 'RMD,AAPL').split(','))
