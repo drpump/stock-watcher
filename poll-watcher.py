@@ -4,6 +4,8 @@ import requests
 import logging
 import time
 
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+
 QUOTES_URL='https://data.alpaca.markets/v2/stocks/quotes/latest'
 
 def quote_json(symbol, quote):
@@ -27,7 +29,7 @@ prepped = requests.Request(
 ).prepare()
 
 from kafka import KafkaProducer
-producer = KafkaProducer(bootstrap_servers=bootstrap)
+# producer = KafkaProducer(bootstrap_servers=bootstrap)
 
 with requests.sessions.Session() as session:
     while True:
@@ -35,12 +37,13 @@ with requests.sessions.Session() as session:
         if (response.status_code == requests.codes.ok):
             quotes = response.json()['quotes']
             for symbol in quotes.keys():
-                producer.send(
-                    'stock-quotes', 
-                    key=bytearray(symbol, 'utf-8'), 
-                    value=bytearray(quote_json(symbol, quotes[symbol]), 'utf-8')
-                )
-            producer.flush()
+                # producer.send(
+                #     'stock-quotes', 
+                #     key=bytearray(symbol, 'utf-8'), 
+                #     value=bytearray(quote_json(symbol, quotes[symbol]), 'utf-8')
+                # )
+                # producer.flush()
+                logging.info(quote_json(symbol, quotes[symbol]))
         else:
             logging.error('Error retrieving quotes: ' + response.text)
         time.sleep(interval)
