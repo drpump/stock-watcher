@@ -15,6 +15,6 @@ Both use environment variables for config, specifically:
 * KAFKA_BOOTSTRAP
     Kafka bootstrap host+port for publishing quotes to Kafka. Default is `dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092` (strimzi k8s cluster called `dev-cluster` in `kafka` namespace)
 * KAFKA_DISABLE
-    If set to any value, kafka will not be used. Quotes will be logged (printed to stdout in this case). Intended primarily for troubleshooting without kafka.
+    If set to any value, kafka will not be used. Quotes will be printed to stdout in JSON format. Intended primarily for troubleshooting without kafka, but you could feed it elsewhere. 
 * ALPACA_POLL
     Polling intercal for `poll-watcher.py` in seconds, default is 300s (5 minutes)

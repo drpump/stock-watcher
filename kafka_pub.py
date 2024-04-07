@@ -23,8 +23,10 @@ def send_quote(symbol, quote):
             key=bytearray(symbol, 'utf-8'), 
             value=bytearray(msg, 'utf-8')
         )
-    logging.info("Kafka msg: " + msg)
+    else:
+        print(msg)
 
 def flush():
     if enabled:
         producer.flush()
+
