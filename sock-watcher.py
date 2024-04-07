@@ -3,7 +3,7 @@ import os
 import json
 import logging
 import time
-import kpub
+import kafka_pub
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -34,12 +34,12 @@ def on_message(ws, message):
             case "error":
                 logging.error("Error: " + json.dumps(obj))
             case "q":
-                kpub.send_quote(obj[SYM_KEY], obj)
+                kafka_pub.send_quote(obj[SYM_KEY], obj)
             case "t":
                 logging.info("New trade: " + json.dumps(obj))
             case _:
                 logging.info("Other message: " + json.dumps(obj))
-    kpub.flush()
+    kafka_pub.flush()
 
 def on_error(ws, error):
     logging.error(f"Error on websocket -- {error}")

@@ -3,7 +3,7 @@ import json
 import requests
 import logging
 import time
-import kpub
+import kafka_pub
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -11,6 +11,16 @@ QUOTES_URL='https://data.alpaca.markets/v2/stocks/quotes/latest'
 
 def env_or_default(env_var, value):
     return value if not env_var in os.environ else os.environ[env_var]
+
+last_quotes={}
+def is_dupe(symbol, quote):
+    global last_quotes
+    if symbol in last_quotes and quote["t"] == last_quotes[symbol]["t"]:
+        logging.debug("Duplicate quote for " + symbol)
+        return True
+    else:
+        last_quotes[symbol] = quote
+        return False
 
 interval = float(env_or_default('ALPACA_POLL_SECONDS', '300'))
 symbols = env_or_default('STOCK_SYMBOLS', 'RMD,AAPL').split(',')
@@ -31,8 +41,9 @@ with requests.sessions.Session() as session:
         if (response.status_code == requests.codes.ok):
             quotes = response.json()['quotes']
             for symbol in quotes.keys():
-                kpub.send_quote(symbol, quotes[symbol])
-            kpub.flush()
+                if not is_dupe(symbol, quotes[symbol]):
+                    kafka_pub.send_quote(symbol, quotes[symbol])
+            kafka_pub.flush()
         else:
             logging.error('Error retrieving quotes: ' + response.text)
         time.sleep(interval)
