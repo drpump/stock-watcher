@@ -7,7 +7,7 @@ import logging
 
 QUOTE_TOPIC="stock-quotes"
 bootstrap = 'dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092' if not 'KAFKA_BOOTSTRAP' in os.environ else os.environ['KAFKA_BOOTSTRAP']
-enabled = True if not 'KAFKA_DISABLE' in os.environ else False
+enabled = False if 'KAFKA_DISABLE' in os.environ else True
 
 if enabled:
     producer = KafkaProducer(bootstrap_servers=bootstrap)
