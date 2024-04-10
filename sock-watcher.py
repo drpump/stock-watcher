@@ -40,8 +40,8 @@ def prom_server():
 
 
 async def sock_watch(symbols):
-    quote_counter = prometheus_client.Counter('poll_quotes', 'Number of unique quotes')
-    error_counter = prometheus_client.Counter('poll_errors', 'Number of polling errors')
+    quote_counter = prometheus_client.Counter('push_quotes', 'Number of unique quotes')
+    error_counter = prometheus_client.Counter('push_errors', 'Number of polling errors')
     headers = {
         'APCA-API-KEY-ID': os.environ['ALPACA_KEY'], 
         'APCA-API-SECRET-KEY': os.environ['ALPACA_SECRET'] 
