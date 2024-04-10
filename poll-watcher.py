@@ -56,6 +56,7 @@ async def poll():
             if (response.status_code == httpx.codes.ok):
                 quotes = response.json()['quotes']
                 for symbol in quotes.keys():
+                    logging.info(f"Quote: {quotes[symbol]}")
                     if not is_dupe(symbol, quotes[symbol]):
                         kafka_pub.send_quote(symbol, quotes[symbol])
                         quote_counter.inc()
