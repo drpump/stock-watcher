@@ -21,7 +21,7 @@ Via docker:
 
 ```
 $ docker pull drpump/stock-watcher
-$ docker run -e ALPACA_KEY=${ALPACA_KEY} -e ALPACA_SECRET=${ALPACA_SECRET} -e KAFKA_DISABLE='' drpump/stock-watcher
+$ docker run -it -e ALPACA_KEY=${ALPACA_KEY} -e ALPACA_SECRET=${ALPACA_SECRET} -e KAFKA_DISABLE='' drpump/stock-watcher
 ```
 
 ## Environment
