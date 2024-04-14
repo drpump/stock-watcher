@@ -4,30 +4,39 @@ import os
 import json
 import logging
 
+QUOTE='quote'
+TRADE='trade'
+BAR='bar'
 
-QUOTE_TOPIC="stock-quotes"
-bootstrap = 'dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092' if not 'KAFKA_BOOTSTRAP' in os.environ else os.environ['KAFKA_BOOTSTRAP']
-enabled = False if 'KAFKA_DISABLE' in os.environ else True
-counts = {}
+sequences = {BAR: {}, QUOTE: {}}
+topics = {BAR: 'stock-bars', QUOTE: 'stock-quotes'}
+producer = None
+enabled = None
 
-if enabled:
-    producer = KafkaProducer(bootstrap_servers=bootstrap)
+def init(bootstrap, enable):
+    global producer, enabled
+    enabled = enable
+    if enabled:
+        producer = KafkaProducer(bootstrap_servers=bootstrap)
 
-def quote_json(symbol, quote):
-    global count
-    counts[symbol] = counts[symbol]+1 if symbol in counts else 1
-    return json.dumps({'symbol': symbol, 'quote': quote, 'retrieved': str(time.time()), 'seq': counts[symbol]})
+def incr(symbol, datatype):
+    global sequences
+    if symbol in sequences[datatype]:
+        sequences[datatype][symbol] += 1
+    else:
+        sequences[datatype][symbol] = 1
+    return sequences[datatype][symbol]
 
-def send_quote(symbol, quote):
-    msg = quote_json(symbol, quote)
+def publish(symbol, datatype, data):
+    msg = {'symbol': symbol, datatype: data, 'seq': incr(symbol, datatype)}
     if enabled:
         producer.send(
-            QUOTE_TOPIC, 
+            topics[datatype], 
             key=bytearray(symbol, 'utf-8'), 
-            value=bytearray(msg, 'utf-8')
+            value=bytearray(json.dumps(msg), 'utf-8')
         )
     else:
-        print(msg)
+        print(json.dumps(msg))
 
 def flush():
     if enabled:

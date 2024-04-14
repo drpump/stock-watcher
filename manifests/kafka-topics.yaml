@@ -1,0 +1,24 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: stock-quotes
+  labels:
+    strimzi.io/cluster: dev-cluster
+spec:
+  partitions: 10
+  replicas: 1
+  config:
+    retention.hours: 24
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: stock-bars
+  labels:
+    strimzi.io/cluster: dev-cluster
+spec:
+  partitions: 10
+  replicas: 1
+  config:
+    retention.hours: 24

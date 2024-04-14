@@ -1,10 +1,23 @@
 # stock-watcher
-Simple python scripts to get quotes from Alpaca.
 
-* `poll-watcher.py` uses the Alpaca REST API to poll for quotes 
-* `sock-watcher.py` receives quotes asynchronously through the Alpaca websocket interface
+Simple python script to get quotes and minute bars from Alpaca and publish them. Details:
+* Quotes are retieved by polling
+* Bars are delivered aynchronously through websockets
+* If kafka is enabled, quotes and bars are published to kafka (set KAFKA_BOOTSTRAP)
+* Otherwise quotes and bars are printed to stdout
+* Only new quotes are published (i.e. if unchanged it is not published)
 
-Both use environment variables for config, specifically:
+To run:
+* [optional] create a venv and activate it
+* pip3 install -r requirements.txt
+* Configure environment variables (see below)
+* If using kafka, create kafka topics if not auto creating
+    - If running kafka in k8s using strimzi, use the topic manifests in `manifests/` to create topics
+* python3 main.py
+
+
+
+Environment variables for config:
 
 * STOCK_SYMBOLS
     Comma-separated list of symbols to poll/watch, no spaces permitted, default is `RMD,AAPL` (ResMed and Apple)
@@ -17,4 +30,4 @@ Both use environment variables for config, specifically:
 * KAFKA_DISABLE
     If set to any value, kafka will not be used. Quotes will be printed to stdout in JSON format. Intended primarily for troubleshooting without kafka, but you could feed it elsewhere. 
 * ALPACA_POLL
-    Polling intercal for `poll-watcher.py` in seconds, default is 300s (5 minutes)
+    Polling interval in seconds, default is 60s (same as bars interval)
