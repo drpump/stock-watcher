@@ -12,10 +12,7 @@ async def home():
 
 @app.get("/readyz")
 async def readiness():
-    if server and server.started:
-        return {"status": "OK"}
-    else:
-        raise HTTPException(status_code=503, detail="Server not ready")
+    return {"status": "OK"}
 
 @app.get("/livez")
 async def liveness():

@@ -20,6 +20,7 @@ async def main():
     symbols = env_or_default('STOCK_SYMBOLS', 'RMD,AAPL').split(',')
     bootstrap = 'dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092' if not 'KAFKA_BOOTSTRAP' in os.environ else os.environ['KAFKA_BOOTSTRAP']
     enable = False if 'KAFKA_DISABLE' in os.environ else True
+    port = int(env_or_default('SERVICE_PORT', '8004'))
     auth = {
         'APCA-API-KEY-ID': os.environ['ALPACA_KEY'], 
         'APCA-API-SECRET-KEY': os.environ['ALPACA_SECRET'] 
