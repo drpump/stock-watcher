@@ -5,7 +5,7 @@ WORKDIR /usr/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r ./requirements.txt
 USER 1000
-COPY watch.py .
+COPY *.py .
 
-CMD ["python3", "./watch.py"]
+CMD ["python3", "./main.py"]
 
