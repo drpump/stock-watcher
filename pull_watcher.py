@@ -3,12 +3,12 @@ import json
 import logging
 import prometheus_client
 import kafka_pub
-from enum import Enum
+from enum import StrEnum
 
 TYPE_KEY = 'T'
 SYM_KEY = 'S'
 
-class TypeCodes(Enum): 
+class TypeCodes(StrEnum): 
     QUOTE = 'q'
     TRADE = 't'
     BAR = 'b'
