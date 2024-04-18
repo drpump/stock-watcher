@@ -6,6 +6,7 @@ Simple python script to get quotes and minute bars from Alpaca and publish them.
 * If kafka is enabled (KAFKA_DISABLE unset), quotes and bars are published to kafka (set KAFKA_BOOTSTRAP)
 * Otherwise quotes and bars are printed to stdout
 * Only new quotes are published (i.e. if unchanged it is not published)
+* Prometheus metrics for quote/bar/trade/error counts are available via HTTP (FastAPI)
 
 ## To run:
 
@@ -21,7 +22,7 @@ Via docker:
 
 ```
 $ docker pull drpump/stock-watcher
-$ docker run -it -e ALPACA_KEY=${ALPACA_KEY} -e ALPACA_SECRET=${ALPACA_SECRET} -e KAFKA_DISABLE='' drpump/stock-watcher
+$ docker run -it -p 8004:8004 -e ALPACA_KEY=${ALPACA_KEY} -e ALPACA_SECRET=${ALPACA_SECRET} -e KAFKA_DISABLE='' drpump/stock-watcher
 ```
 
 ## Environment
@@ -40,3 +41,5 @@ Environment variables for config:
     If set to any value, kafka will not be used. Quotes will be printed to stdout in JSON format. Intended primarily for troubleshooting without kafka, but you could feed it elsewhere. 
 * ALPACA_POLL
     Polling interval in seconds, default is 60s (same as bars interval)
+* SERVICE_PORT
+    Port to use for HTTP serve prometheus metrics and livez/readyz (health) checks. Default is 8004. Retrieve metrics from `http://localhost:8004/metrics`.
