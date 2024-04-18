@@ -49,13 +49,13 @@ async def process(message, sock, symbols):
             case TypeCodes.QUOTE | TypeCodes.TRADE | TypeCodes.BAR:
                 symbol = obj[SYM_KEY]
                 counters[key].labels(symbol).inc
-                kafka_pub.publish(symbol, types[key], obj)
+                await kafka_pub.publish(symbol, types[key], obj)
             case "error":
                 error_counter.inc()
                 logging.error("Error: " + json.dumps(obj))
             case _:
-                logging.info("Other message: " + json.dumps(obj))
-    kafka_pub.flush()
+                logging.warn("Unrecognized message: " + json.dumps(obj))
+    await kafka_pub.flush()
 
 async def puller(symbols, auth):
     async with websockets.connect("wss://stream.data.alpaca.markets/v2/iex", extra_headers=auth) as sock:

@@ -25,7 +25,7 @@ async def main():
         'APCA-API-KEY-ID': os.environ['ALPACA_KEY'], 
         'APCA-API-SECRET-KEY': os.environ['ALPACA_SECRET'] 
     }
-    kafka_pub.init(bootstrap, enable)
+    await kafka_pub.init(bootstrap, enable)
     async with asyncio.TaskGroup() as tg:
         prom = tg.create_task(api.serve(8004))
         puller = tg.create_task(pull_watcher.puller(symbols, auth))

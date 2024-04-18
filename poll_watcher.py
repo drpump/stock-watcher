@@ -40,9 +40,9 @@ async def poller(symbols, interval, auth_headers):
                 for symbol in quotes.keys():
                     logging.info(f"Quote: {quotes[symbol]}")
                     if not is_dupe(symbol, quotes[symbol]):
-                        kafka_pub.publish(symbol, 'quote', quotes[symbol])
+                        await kafka_pub.publish(symbol, 'quote', quotes[symbol])
                         quote_ctr.labels(symbol).inc()
-                kafka_pub.flush()
+                await kafka_pub.flush()
             else:
                 logging.error('Error retrieving quotes: ' + response.text)
                 error_ctr.inc()
