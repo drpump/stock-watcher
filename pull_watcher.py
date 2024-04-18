@@ -19,9 +19,9 @@ types = {
     TypeCodes.BAR: kafka_pub.BAR
 }
 counters = {
-    TypeCodes.QUOTE : prometheus_client.Counter('push_quotes', 'Number of unique quotes'),
-    TypeCodes.TRADE: prometheus_client.Counter('push_trades', 'Number of unique trades'),
-    TypeCodes.BAR: prometheus_client.Counter('push_bars', 'Number of unique bars')
+    TypeCodes.QUOTE : prometheus_client.Counter('push_quotes', 'Number of unique quotes', ['symbol']),
+    TypeCodes.TRADE: prometheus_client.Counter('push_trades', 'Number of unique trades', ['symbol']),
+    TypeCodes.BAR: prometheus_client.Counter('push_bars', 'Number of unique bars', ['symbol'])
 }
 error_counter = prometheus_client.Counter('push_errors', 'Number of polling errors')
  
@@ -47,8 +47,9 @@ async def process(message, sock, symbols):
                 if obj["msg"] == "authenticated":
                     await sock.send(subs_request(symbols))
             case TypeCodes.QUOTE | TypeCodes.TRADE | TypeCodes.BAR:
-                counters[key].inc
-                kafka_pub.publish(obj[SYM_KEY], types[key], obj)
+                symbol = obj[SYM_KEY]
+                counters[key].labels(symbol).inc
+                kafka_pub.publish(symbol, types[key], obj)
             case "error":
                 error_counter.inc()
                 logging.error("Error: " + json.dumps(obj))

@@ -28,7 +28,7 @@ def prep_request(symbols, auth_headers):
 
 async def poller(symbols, interval, auth_headers):
     request_ctr = prometheus_client.Counter('poll_requests', 'Number of HTTP requests')
-    quote_ctr = prometheus_client.Counter('poll_quotes', 'Number of unique quotes')
+    quote_ctr = prometheus_client.Counter('poll_quotes', 'Number of unique quotes', ['symbol'])
     error_ctr = prometheus_client.Counter('poll_errors', 'Number of polling errors')
     prepped = prep_request(symbols, auth_headers)
     async with httpx.AsyncClient(http2=True) as client:
@@ -41,7 +41,7 @@ async def poller(symbols, interval, auth_headers):
                     logging.info(f"Quote: {quotes[symbol]}")
                     if not is_dupe(symbol, quotes[symbol]):
                         kafka_pub.publish(symbol, 'quote', quotes[symbol])
-                        quote_ctr.inc()
+                        quote_ctr.labels(symbol).inc()
                 kafka_pub.flush()
             else:
                 logging.error('Error retrieving quotes: ' + response.text)
