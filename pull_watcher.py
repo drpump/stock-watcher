@@ -48,7 +48,7 @@ async def process(message, sock, symbols):
                     await sock.send(subs_request(symbols))
             case TypeCodes.QUOTE | TypeCodes.TRADE | TypeCodes.BAR:
                 symbol = obj[SYM_KEY]
-                counters[key].labels(symbol).inc
+                counters[key].labels(symbol).inc()
                 await kafka_pub.publish(symbol, types[key], obj)
             case "error":
                 error_counter.inc()
