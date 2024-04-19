@@ -3,8 +3,9 @@ import json
 import httpx
 import logging
 import kafka_pub
-import prometheus_client
+from prometheus_client import Counter
 import asyncio
+from gauges import quote_gauge_update
 
 QUOTES_URL='https://data.alpaca.markets/v2/stocks/quotes/latest'
 last_quotes={}
@@ -27,9 +28,9 @@ def prep_request(symbols, auth_headers):
     )
 
 async def poller(symbols, interval, auth_headers):
-    request_ctr = prometheus_client.Counter('poll_requests', 'Number of HTTP requests')
-    quote_ctr = prometheus_client.Counter('poll_quotes', 'Number of unique quotes', ['symbol'])
-    error_ctr = prometheus_client.Counter('poll_errors', 'Number of polling errors')
+    request_ctr = Counter('poll_requests', 'Number of HTTP requests')
+    quote_ctr = Counter('poll_quotes', 'Number of unique quotes', ['symbol'])
+    error_ctr = Counter('poll_errors', 'Number of polling errors')
     prepped = prep_request(symbols, auth_headers)
     async with httpx.AsyncClient(http2=True) as client:
         while True:
@@ -42,6 +43,7 @@ async def poller(symbols, interval, auth_headers):
                     if not is_dupe(symbol, quotes[symbol]):
                         await kafka_pub.publish(symbol, 'quote', quotes[symbol])
                         quote_ctr.labels(symbol).inc()
+                        quote_gauge_update(symbol, quotes[symbol])
                 await kafka_pub.flush()
             else:
                 logging.error('Error retrieving quotes: ' + response.text)

@@ -1,8 +1,9 @@
 import websockets
 import json
 import logging
-import prometheus_client
+from prometheus_client import Counter
 import kafka_pub
+import gauges
 from enum import StrEnum
 
 TYPE_KEY = 'T'
@@ -19,12 +20,11 @@ types = {
     TypeCodes.BAR: kafka_pub.BAR
 }
 counters = {
-    TypeCodes.QUOTE : prometheus_client.Counter('push_quotes', 'Number of unique quotes', ['symbol']),
-    TypeCodes.TRADE: prometheus_client.Counter('push_trades', 'Number of unique trades', ['symbol']),
-    TypeCodes.BAR: prometheus_client.Counter('push_bars', 'Number of unique bars', ['symbol'])
+    TypeCodes.QUOTE : Counter('push_quotes', 'Number of unique quotes', ['symbol']),
+    TypeCodes.TRADE: Counter('push_trades', 'Number of unique trades', ['symbol']),
+    TypeCodes.BAR: Counter('push_bars', 'Number of unique bars', ['symbol'])
 }
-error_counter = prometheus_client.Counter('push_errors', 'Number of polling errors')
- 
+error_counter = Counter('push_errors', 'Number of polling errors')
 
 def env_or_default(env_var, value):
     return value if not env_var in os.environ else os.environ[env_var]
@@ -34,6 +34,14 @@ def subs_request(symbols):
             "action": "subscribe",
             "bars": symbols
     })
+
+def gauge_update(type_code, symbol, message):
+    match type_code:
+        case TypeCodes.QUOTE:
+            qauges.quote_gauge_update(symbol, message)
+        case TypeCodes.BAR:
+            gauges.bar_gauge_updatege_update(symbol, message)
+    return
 
 async def process(message, sock, symbols):
     parsed = json.loads(message)
@@ -50,6 +58,7 @@ async def process(message, sock, symbols):
                 symbol = obj[SYM_KEY]
                 counters[key].labels(symbol).inc()
                 await kafka_pub.publish(symbol, types[key], obj)
+                gauge_update(symbol, obj)
             case "error":
                 error_counter.inc()
                 logging.error("Error: " + json.dumps(obj))

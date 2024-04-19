@@ -3,10 +3,14 @@
 Simple python script to get quotes and minute bars from Alpaca and publish them. Details:
 * Quotes are retrieved by polling
 * Bars are delivered aynchronously through websockets
+* Quotes and bars are printed to stdout (log output goes to stderr)
+* A FastAPI server is started on port 8004 (configurable) 
+* Prometheus metrics are accessible at `http://localhost:8004/metrics/`
+* Prometheus counters for quote/bar/trade/error counts are also available
+* Quote and bar price/volume/size info is published via prometheus guages with symbol as label
 * If kafka is enabled (KAFKA_DISABLE unset), quotes and bars are published to kafka (set KAFKA_BOOTSTRAP)
-* Otherwise quotes and bars are printed to stdout
+metrics (subject to port setting)
 * Only new quotes are published (i.e. if unchanged it is not published)
-* Prometheus metrics for quote/bar/trade/error counts are available via HTTP (FastAPI)
 
 ## To run:
 
@@ -42,4 +46,18 @@ Environment variables for config:
 * ALPACA_POLL
     Polling interval in seconds, default is 60s (same as bars interval)
 * SERVICE_PORT
-    Port to use for HTTP serve prometheus metrics and livez/readyz (health) checks. Default is 8004. Retrieve metrics from `http://localhost:8004/metrics`.
+    Port to use for HTTP serve prometheus metrics and livez/readyz (health) checks. Default is 8004. Retrieve metrics from `http://localhost:${SERVICE_PORT}/metrics`.
+
+## Implementation and behaviour notes
+
+* Alpaca free accounts can only access the IEX exchange. Quotes, bars and trades from this exchange are considerably 
+  less frequent than for other exchanges. For example, RMD gets a new bar every 1-5 minutes on average trading days.
+* Assuming you run a Prometheus server, you will configure the server to poll the price gauges every N seconds
+  If there is no update since the last poll it gets the same value again. If there were multiple updates, it only 
+  gets the last one in the period. 
+* If you want to better reflect all updates in your analytics, Kafka + Flink will allow you to do near-real-time 
+  analytics on all messages the data streams. You could also add the received messages to a time-series database 
+  for more static analysis. 
+* A zero price for ask/bid in the quote data means that there are no sellers/buyers, not that the price is zero, so 
+  these values are not added to the corresponding prometheus price guages.
+* The trades push feed is currently untested and has no prometheus guages.
