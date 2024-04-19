@@ -36,7 +36,7 @@ async def publish(symbol, datatype, data):
             value=bytearray(json.dumps(msg), 'utf-8')
         )
     else:
-        await print(json.dumps(msg))
+        print(json.dumps(msg))
 
 async def flush():
     if enabled:
