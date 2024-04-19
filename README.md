@@ -4,12 +4,10 @@ Simple python script to get quotes and minute bars from Alpaca and publish them.
 * Quotes are retrieved by polling
 * Bars are delivered aynchronously through websockets
 * Quotes and bars are printed to stdout (log output goes to stderr)
-* A FastAPI server is started on port 8004 (configurable) 
-* Prometheus metrics are accessible at `http://localhost:8004/metrics/`
-* Prometheus counters for quote/bar/trade/error counts are also available
+* A FastAPI server is started on port 8004 (configurable), and prometheus metrics are accessible at `http://localhost:8004/metrics/`
 * Quote and bar price/volume/size info is published via prometheus guages with symbol as label
+* Prometheus counters for quote/bar/trade/error counts are also available
 * If kafka is enabled (KAFKA_DISABLE unset), quotes and bars are published to kafka (set KAFKA_BOOTSTRAP)
-metrics (subject to port setting)
 * Only new quotes are published (i.e. if unchanged it is not published)
 
 ## To run:
@@ -42,11 +40,12 @@ Environment variables for config:
 * KAFKA_BOOTSTRAP
     Kafka bootstrap host+port for publishing quotes to Kafka. Default is `dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092` (strimzi k8s cluster called `dev-cluster` in `kafka` namespace)
 * KAFKA_DISABLE
-    If set to any value, kafka will not be used. Quotes will be printed to stdout in JSON format. Intended primarily for troubleshooting without kafka, but you could feed it elsewhere. 
+    If set to any value, kafka will not be used. Quotes will be printed to stdout in JSON format and price + count
+    metrics will still be accessible on the FastAPI endpoint.
 * ALPACA_POLL
     Polling interval in seconds, default is 60s (same as bars interval)
 * SERVICE_PORT
-    Port to use for HTTP serve prometheus metrics and livez/readyz (health) checks. Default is 8004. Retrieve metrics from `http://localhost:${SERVICE_PORT}/metrics`.
+    Port to use for HTTP serve prometheus metrics and livez/readyz (health) checks. Default is 8004. Retrieve metrics from `http://localhost:${SERVICE_PORT}/metrics/`.
 
 ## Implementation and behaviour notes
 
