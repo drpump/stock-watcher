@@ -57,7 +57,7 @@ async def process(message, sock, symbols):
                 logging.warn("Unrecognized message: " + json.dumps(obj))
     await kafka_pub.flush()
 
-async def puller(symbols, auth):
+async def pusher(symbols, auth):
     async with websockets.connect("wss://stream.data.alpaca.markets/v2/iex", extra_headers=auth) as sock:
         async for message in sock:
             await process(message, sock, symbols)

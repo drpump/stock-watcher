@@ -1,6 +1,6 @@
 import api
 import poll_watcher
-import pull_watcher
+import push_watcher
 import logging
 import os
 import asyncio
@@ -28,7 +28,7 @@ async def main():
     await kafka_pub.init(bootstrap, enable)
     async with asyncio.TaskGroup() as tg:
         prom = tg.create_task(api.serve(8004))
-        puller = tg.create_task(pull_watcher.puller(symbols, auth))
+        pusher = tg.create_task(push_watcher.pusher(symbols, auth))
         poller = tg.create_task(poll_watcher.poller(symbols, interval, auth))
 
 asyncio.run(main())
