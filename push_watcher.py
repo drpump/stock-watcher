@@ -58,7 +58,7 @@ async def process(message, sock, symbols):
                 symbol = obj[SYM_KEY]
                 counters[key].labels(symbol).inc()
                 await kafka_pub.publish(symbol, types[key], obj)
-                gauge_update(symbol, obj)
+                gauge_update(key, symbol, obj)
             case "error":
                 error_counter.inc()
                 logging.error("Error: " + json.dumps(obj))
