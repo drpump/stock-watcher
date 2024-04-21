@@ -12,24 +12,52 @@ Simple python script to get quotes and minute bars from Alpaca and publish them.
 
 ## To run:
 
+First obtain API credentials for your alpaca account and set `ALPACA_SECRET` and `ALPACA_KEY` environment variables to your secret and key values respectively
+
+### Local script
+
 As a local pythons script
 * [optional] create a venv and activate it
 * `pip3 install -r requirements.txt`
-* Configure environment variables (see below)
-* If using kafka, create kafka topics if not auto creating
-    - If running kafka in k8s using strimzi, use the topic manifests in `manifests/` to create topics
+* Configure STOCK_SYMBOLS, KAFKA_BOOTSTRAP or KAFKA_DISABLE and ALPACA_POLL_SECONDS environment variables if required (see below)
 * `python3 main.py`
 
-Via docker:
+### Docker
 
 ```
 $ docker pull drpump/stock-watcher
 $ docker run -it -p 8004:8004 -e ALPACA_KEY=${ALPACA_KEY} -e ALPACA_SECRET=${ALPACA_SECRET} -e KAFKA_DISABLE='' drpump/stock-watcher
 ```
 
-## Environment
+### k8s + kafka/prometheus
 
-Environment variables for config:
+Suggest running locally first to confirm your credentials and connectivity are OK. 
+
+1. Kafka (optional)
+  1. Install strimzi kubernetes operator for kakfa and create a kafka cluster: see the [quickstarts](https://strimzi.io/quickstarts/), use cluster name `dev-cluster` if you want to minimise editing of manifests
+  1. `kubectl apply -f manifests/kafk-topics.yaml`, modifying cluster name if desired
+1. Prometheus (recommended but sometimes finicky to install)
+  1. Install the prometheusstack, suggest using the [helm chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
+  1. `kubectl applf -f manifests/stock-watcher`
+1. Watcher app
+  1. Create a k8s secret with these credentials: 
+    `kubectl create secret generic alpaca-creds --from-literal=ALPACA_KEY=${ALPACA_KEY} --from-literal=ALPACA_SECRET=${ALPACA_SECRET}`
+  1. Edit `manifests/stock-watcher.yaml` and set your STOCK_SYMBOLS, KAFKA_BOOTSTRAP and ALPACA_POLL_INTERVAL environment variables. If not using kafka, add a `KAFKA_DISABLE` variable.
+  1. `kubectl apply -f manifests/stock-watcher.yaml
+
+1. To see kafka output (replace boostrap url if required):
+    `kubectl -n kafka run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.40.0-kafka-3.7.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server dev-cluster-kafka-bootstrap:9092 --topic stock-quotes`
+
+1. For prometheus/grafana:
+  1. Open grafana and choose `Explore`
+  1. Choose `prometheus` as the source
+  1. In the query dialogue, set the metric to `quote_bid` and optionally filter by symbol
+  1. Hey presto, you'll get a graph of the bid prices
+  1. Optionally add another query for the `quote_ask` metric and see them plotted together
+
+## Configuration
+
+The app uses the following environment variables for config:
 
 * STOCK_SYMBOLS
     Comma-separated list of symbols to poll/watch, no spaces permitted, default is `RMD,AAPL` (ResMed and Apple)
@@ -42,8 +70,8 @@ Environment variables for config:
 * KAFKA_DISABLE
     If set to any value, kafka will not be used. Quotes will be printed to stdout in JSON format and price + count
     metrics will still be accessible on the FastAPI endpoint.
-* ALPACA_POLL
-    Polling interval in seconds, default is 60s (same as bars interval)
+* ALPACA_POLL_SECONDS
+    Polling interval in seconds, default is 60s (same as Alpaca bars interval)
 * SERVICE_PORT
     Port to use for HTTP serve prometheus metrics and livez/readyz (health) checks. Default is 8004. Retrieve metrics from `http://localhost:${SERVICE_PORT}/metrics/`.
 

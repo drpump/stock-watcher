@@ -31,7 +31,8 @@ metadata:
     run: watcher
 spec:
   ports:
-    - port: 8004
+    - name: monitor
+      port: 8004
       protocol: TCP
   selector:
     app: watcher
