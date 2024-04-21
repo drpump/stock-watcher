@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: watcher-deployment
+spec:
+  selector:
+    matchLabels:
+      app: watcher
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: watcher
+    spec:
+      containers:
+      - name: watcher
+        image: drpump/stock-watcher
+        ports:
+        - containerPort: 8004
+        envFrom: 
+        - configMapRef:
+            name: watcher-env-config
+        - secretRef:
+            name: alpaca-creds
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watcher-service
+  labels:
+    run: watcher
+spec:
+  ports:
+    - port: 8004
+      protocol: TCP
+  selector:
+    app: watcher
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: watcher-ingress
+  annotations:
+    spec.ingressClassName: "traefik"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+spec:
+  tls:
+    - secretName: watcher-prod-dev-whyanbeel-net
+      hosts:
+        - watcher.dev.whyanbeel.net
+  rules:
+    - host: watcher.dev.whyanbeel.net
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: 'watcher-service'
+              port: 
+                number: 8004
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: watcher-env-config
+data:
+  STOCK_SYMBOLS: RMD,AAPL
+  KAFKA_BOOTSTRAP: dev-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
+  ALPACA_POLL_SECONDS: "120"

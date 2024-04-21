@@ -17,7 +17,7 @@ async def init(bootstrap, enable):
     global producer, enabled
     enabled = enable
     if enabled:
-        producer = await KafkaProducer(bootstrap_servers=bootstrap)
+        producer = KafkaProducer(bootstrap_servers=bootstrap)
 
 def incr(symbol, datatype):
     global sequences
@@ -30,7 +30,7 @@ def incr(symbol, datatype):
 async def publish(symbol, datatype, data):
     msg = {'symbol': symbol, datatype: data, 'seq': incr(symbol, datatype)}
     if enabled:
-        await producer.send(
+        producer.send(
             topics[datatype], 
             key=bytearray(symbol, 'utf-8'), 
             value=bytearray(json.dumps(msg), 'utf-8')
@@ -40,5 +40,5 @@ async def publish(symbol, datatype, data):
 
 async def flush():
     if enabled:
-        await producer.flush()
+        producer.flush()
 
